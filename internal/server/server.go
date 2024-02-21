@@ -1,6 +1,7 @@
 package server
 
 import (
+	"broker-hotel-booking/internal/kafka"
 	"broker-hotel-booking/internal/proto"
 	"fmt"
 	"google.golang.org/grpc"
@@ -11,15 +12,22 @@ import (
 
 type server struct {
 	proto.AccountServiceServer
+	kafkaClient *kafka.Kafka
 }
 
-func ListenAndServe(Port string) {
+func NewSever(kafka *kafka.Kafka) *server {
+	return &server{
+		kafkaClient: kafka,
+	}
+}
+func ListenAndServe(Port string, kafka *kafka.Kafka) {
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", Port))
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	s := grpc.NewServer()
-	proto.RegisterAccountServiceServer(s, &server{})
+	proto.RegisterAccountServiceServer(s, NewSever(kafka))
 	fmt.Println("Server connecting...")
 	err = s.Serve(lis)
 	if err != nil {

@@ -2,30 +2,33 @@ syntax = "proto3";
 package protobufs;
 option go_package="./proto";
 service AccountService {
-  rpc GetAllAccount (GetAllAccountRequest) returns (GetAllAccountResponse);
+  rpc GetAllAccount (GetAccountsRequest) returns (GetAccountsResponse);
   rpc GetAccountByCitizenID (GetAccountByCitizenIDRequest) returns (Account);
 }
 
-message GetAllAccountRequest {
-  int32 Page =1;
-  int32 Offset=2;
+message GetAccountsRequest {
+  string ID =1;
+  string StaffID=2;
+  string Username=3;
+  int32 Page =4;
+  int32 Offset=5;
 }
 message GetAccountByCitizenIDRequest {
   int32 CitizenID =1;
 }
 
-message GetAllAccountResponse {
+message GetAccountsResponse {
   repeated Account accounts=1;
 }
 
 message Account {
-  uint32 ID = 1;
-  string StaffID = 2;
-  string Username = 3;
-  string Password = 4;
-  string UserRoleID = 5;
-  string CreatedAt = 6;
-  string UpdatedAt = 7;
-  string DeletedAt = 8;
-  string LastLoginAt = 9;
+  uint32 id = 1 ;
+  string staff_id = 2;
+  string username = 3;
+  string password = 4;
+  string user_role_id = 5;
+  string created_at = 6;
+  string updated_at = 7;
+  string deleted_at = 8;
+  string last_login_at = 9;
 }

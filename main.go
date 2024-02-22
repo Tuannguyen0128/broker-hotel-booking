@@ -1,6 +1,7 @@
 package main
 
 import (
+	"broker-hotel-booking/config"
 	"broker-hotel-booking/internal/kafka"
 	"broker-hotel-booking/internal/server"
 	"fmt"
@@ -14,5 +15,8 @@ func main() {
 	go kafkaClient.ReadMessage(ch)
 	fmt.Println(string(<-ch))
 	fmt.Println(string(<-ch))
-	server.ListenAndServe("3001", kafkaClient)
+
+	// Init config
+	conf := config.Load("./config/config.yaml")
+	server.ListenAndServe("3001", kafkaClient, conf)
 }

@@ -27,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AccountServiceClient interface {
-	GetAllAccount(ctx context.Context, in *GetAllAccountRequest, opts ...grpc.CallOption) (*GetAllAccountResponse, error)
+	GetAllAccount(ctx context.Context, in *GetAccountsRequest, opts ...grpc.CallOption) (*GetAccountsResponse, error)
 	GetAccountByCitizenID(ctx context.Context, in *GetAccountByCitizenIDRequest, opts ...grpc.CallOption) (*Account, error)
 }
 
@@ -39,8 +39,8 @@ func NewAccountServiceClient(cc grpc.ClientConnInterface) AccountServiceClient {
 	return &accountServiceClient{cc}
 }
 
-func (c *accountServiceClient) GetAllAccount(ctx context.Context, in *GetAllAccountRequest, opts ...grpc.CallOption) (*GetAllAccountResponse, error) {
-	out := new(GetAllAccountResponse)
+func (c *accountServiceClient) GetAllAccount(ctx context.Context, in *GetAccountsRequest, opts ...grpc.CallOption) (*GetAccountsResponse, error) {
+	out := new(GetAccountsResponse)
 	err := c.cc.Invoke(ctx, AccountService_GetAllAccount_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (c *accountServiceClient) GetAccountByCitizenID(ctx context.Context, in *Ge
 // All implementations must embed UnimplementedAccountServiceServer
 // for forward compatibility
 type AccountServiceServer interface {
-	GetAllAccount(context.Context, *GetAllAccountRequest) (*GetAllAccountResponse, error)
+	GetAllAccount(context.Context, *GetAccountsRequest) (*GetAccountsResponse, error)
 	GetAccountByCitizenID(context.Context, *GetAccountByCitizenIDRequest) (*Account, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
@@ -70,7 +70,7 @@ type AccountServiceServer interface {
 type UnimplementedAccountServiceServer struct {
 }
 
-func (UnimplementedAccountServiceServer) GetAllAccount(context.Context, *GetAllAccountRequest) (*GetAllAccountResponse, error) {
+func (UnimplementedAccountServiceServer) GetAllAccount(context.Context, *GetAccountsRequest) (*GetAccountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllAccount not implemented")
 }
 func (UnimplementedAccountServiceServer) GetAccountByCitizenID(context.Context, *GetAccountByCitizenIDRequest) (*Account, error) {
@@ -90,7 +90,7 @@ func RegisterAccountServiceServer(s grpc.ServiceRegistrar, srv AccountServiceSer
 }
 
 func _AccountService_GetAllAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAllAccountRequest)
+	in := new(GetAccountsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func _AccountService_GetAllAccount_Handler(srv interface{}, ctx context.Context,
 		FullMethod: AccountService_GetAllAccount_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).GetAllAccount(ctx, req.(*GetAllAccountRequest))
+		return srv.(AccountServiceServer).GetAllAccount(ctx, req.(*GetAccountsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

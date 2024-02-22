@@ -2,12 +2,20 @@ package server
 
 import (
 	"broker-hotel-booking/internal/proto"
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
+	"log"
+	"net/http"
 )
 
-func (sv *server) GetAllAccount(ctx context.Context, req *proto.GetAllAccountRequest) (*proto.GetAllAccountResponse, error) {
+var (
+	accountUrl = "/api/"
+)
+
+func (sv *server) GetAllAccount(ctx context.Context, req *proto.GetAccountsRequest) (*proto.GetAccountsResponse, error) {
 	requestId, _ := uuid.NewUUID()
 	message := &Message{
 		Header: MessageHeader{
@@ -16,16 +24,38 @@ func (sv *server) GetAllAccount(ctx context.Context, req *proto.GetAllAccountReq
 		},
 		Body: req,
 	}
-	bytes, _ := json.Marshal(message)
-	sv.kafkaClient.SendMessage(bytes)
-	reponse := make(chan []byte)
-	sv.kafkaClient.ReadMessage(reponse)
-	var accounts []*proto.Account
-	json.Unmarshal(<-reponse, accounts)
-	res := &proto.GetAllAccountResponse{
-		Accounts: accounts,
+	// Prepare request
+	payload, _ := json.Marshal(message)
+	jsonPayload := make([]byte, 0)
+	if payload != nil {
+		jsonPayload, _ = json.Marshal(payload)
 	}
-	return res, nil
+
+	//result := &ClientResponse{}
+	url := sv.CFG.RepoServer + accountUrl + fmt.Sprintf("accounts?id=%s&staff_id=%s&username=%s&page=%d&offset=%d", req.ID, req.StaffID, req.Username, req.Page, req.Offset)
+	log.Println("Broker call to repo:", url)
+	request, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonPayload))
+	request.Header.Set("Content-Type", "application/json")
+
+	// Do request
+	client := http.Client{}
+	resp, err := client.Do(request)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		log.Println("Failed unable to reach the server.", err, url)
+		return nil, err
+	}
+
+	// Response
+	var accounts *proto.GetAccountsResponse
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&accounts)
+	if err != nil {
+		fmt.Println("Loi")
+	}
+	return accounts, nil
 }
 func (sv *server) GetAccountByCitizenID(ctx context.Context, req *proto.GetAccountByCitizenIDRequest) (*proto.Account, error) {
 	requestId, _ := uuid.NewUUID()
@@ -36,12 +66,35 @@ func (sv *server) GetAccountByCitizenID(ctx context.Context, req *proto.GetAccou
 		},
 		Body: req,
 	}
-	response := make(chan []byte)
-	bytes, _ := json.Marshal(message)
-	sv.kafkaClient.SendMessage(bytes)
-	sv.kafkaClient.ReadMessage(response)
-	var account *proto.Account
-	json.Unmarshal(<-response, account)
+	// Prepare request
+	payload, _ := json.Marshal(message)
+	jsonPayload := make([]byte, 0)
+	if payload != nil {
+		jsonPayload, _ = json.Marshal(payload)
+	}
+
+	result := &ClientResponse{}
+	url := ""
+	request, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonPayload))
+	request.Header.Set("Content-Type", "application/json")
+
+	// Do request
+	client := http.Client{}
+	resp, err := client.Do(request)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		log.Println("Failed unable to reach the server.", err, url)
+		return nil, err
+	}
+
+	// Response
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&result.RawData)
+	account := &proto.Account{}
+	byteRawdata := result.RawData.([]byte)
+	json.Unmarshal(byteRawdata, account)
 	return account, nil
 }
 
@@ -56,4 +109,9 @@ type Message struct {
 }
 type Accounts struct {
 	list []Account
+}
+type ClientResponse struct {
+	Status  string      `json:"status"`
+	Code    int         `json:"code"`
+	RawData interface{} `json:"raw_data"`
 }

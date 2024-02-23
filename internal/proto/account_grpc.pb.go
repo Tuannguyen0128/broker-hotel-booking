@@ -19,16 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	AccountService_GetAllAccount_FullMethodName         = "/protobufs.AccountService/GetAllAccount"
-	AccountService_GetAccountByCitizenID_FullMethodName = "/protobufs.AccountService/GetAccountByCitizenID"
+	AccountService_GetAccounts_FullMethodName   = "/protobufs.AccountService/GetAccounts"
+	AccountService_CreateAccount_FullMethodName = "/protobufs.AccountService/CreateAccount"
+	AccountService_DeleteAccount_FullMethodName = "/protobufs.AccountService/DeleteAccount"
+	AccountService_UpdateAccount_FullMethodName = "/protobufs.AccountService/UpdateAccount"
 )
 
 // AccountServiceClient is the client API for AccountService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AccountServiceClient interface {
-	GetAllAccount(ctx context.Context, in *GetAccountsRequest, opts ...grpc.CallOption) (*GetAccountsResponse, error)
-	GetAccountByCitizenID(ctx context.Context, in *GetAccountByCitizenIDRequest, opts ...grpc.CallOption) (*Account, error)
+	GetAccounts(ctx context.Context, in *GetAccountsRequest, opts ...grpc.CallOption) (*GetAccountsResponse, error)
+	CreateAccount(ctx context.Context, in *Account, opts ...grpc.CallOption) (*CreateAccountResponse, error)
+	DeleteAccount(ctx context.Context, in *DeleteAccountRequest, opts ...grpc.CallOption) (*DeleteAccountResponse, error)
+	UpdateAccount(ctx context.Context, in *Account, opts ...grpc.CallOption) (*Account, error)
 }
 
 type accountServiceClient struct {
@@ -39,18 +43,36 @@ func NewAccountServiceClient(cc grpc.ClientConnInterface) AccountServiceClient {
 	return &accountServiceClient{cc}
 }
 
-func (c *accountServiceClient) GetAllAccount(ctx context.Context, in *GetAccountsRequest, opts ...grpc.CallOption) (*GetAccountsResponse, error) {
+func (c *accountServiceClient) GetAccounts(ctx context.Context, in *GetAccountsRequest, opts ...grpc.CallOption) (*GetAccountsResponse, error) {
 	out := new(GetAccountsResponse)
-	err := c.cc.Invoke(ctx, AccountService_GetAllAccount_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, AccountService_GetAccounts_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *accountServiceClient) GetAccountByCitizenID(ctx context.Context, in *GetAccountByCitizenIDRequest, opts ...grpc.CallOption) (*Account, error) {
+func (c *accountServiceClient) CreateAccount(ctx context.Context, in *Account, opts ...grpc.CallOption) (*CreateAccountResponse, error) {
+	out := new(CreateAccountResponse)
+	err := c.cc.Invoke(ctx, AccountService_CreateAccount_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) DeleteAccount(ctx context.Context, in *DeleteAccountRequest, opts ...grpc.CallOption) (*DeleteAccountResponse, error) {
+	out := new(DeleteAccountResponse)
+	err := c.cc.Invoke(ctx, AccountService_DeleteAccount_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) UpdateAccount(ctx context.Context, in *Account, opts ...grpc.CallOption) (*Account, error) {
 	out := new(Account)
-	err := c.cc.Invoke(ctx, AccountService_GetAccountByCitizenID_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, AccountService_UpdateAccount_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +83,10 @@ func (c *accountServiceClient) GetAccountByCitizenID(ctx context.Context, in *Ge
 // All implementations must embed UnimplementedAccountServiceServer
 // for forward compatibility
 type AccountServiceServer interface {
-	GetAllAccount(context.Context, *GetAccountsRequest) (*GetAccountsResponse, error)
-	GetAccountByCitizenID(context.Context, *GetAccountByCitizenIDRequest) (*Account, error)
+	GetAccounts(context.Context, *GetAccountsRequest) (*GetAccountsResponse, error)
+	CreateAccount(context.Context, *Account) (*CreateAccountResponse, error)
+	DeleteAccount(context.Context, *DeleteAccountRequest) (*DeleteAccountResponse, error)
+	UpdateAccount(context.Context, *Account) (*Account, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
 
@@ -70,11 +94,17 @@ type AccountServiceServer interface {
 type UnimplementedAccountServiceServer struct {
 }
 
-func (UnimplementedAccountServiceServer) GetAllAccount(context.Context, *GetAccountsRequest) (*GetAccountsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllAccount not implemented")
+func (UnimplementedAccountServiceServer) GetAccounts(context.Context, *GetAccountsRequest) (*GetAccountsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAccounts not implemented")
 }
-func (UnimplementedAccountServiceServer) GetAccountByCitizenID(context.Context, *GetAccountByCitizenIDRequest) (*Account, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAccountByCitizenID not implemented")
+func (UnimplementedAccountServiceServer) CreateAccount(context.Context, *Account) (*CreateAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateAccount not implemented")
+}
+func (UnimplementedAccountServiceServer) DeleteAccount(context.Context, *DeleteAccountRequest) (*DeleteAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteAccount not implemented")
+}
+func (UnimplementedAccountServiceServer) UpdateAccount(context.Context, *Account) (*Account, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateAccount not implemented")
 }
 func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 
@@ -89,38 +119,74 @@ func RegisterAccountServiceServer(s grpc.ServiceRegistrar, srv AccountServiceSer
 	s.RegisterService(&AccountService_ServiceDesc, srv)
 }
 
-func _AccountService_GetAllAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AccountService_GetAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetAccountsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AccountServiceServer).GetAllAccount(ctx, in)
+		return srv.(AccountServiceServer).GetAccounts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AccountService_GetAllAccount_FullMethodName,
+		FullMethod: AccountService_GetAccounts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).GetAllAccount(ctx, req.(*GetAccountsRequest))
+		return srv.(AccountServiceServer).GetAccounts(ctx, req.(*GetAccountsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AccountService_GetAccountByCitizenID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAccountByCitizenIDRequest)
+func _AccountService_CreateAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Account)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AccountServiceServer).GetAccountByCitizenID(ctx, in)
+		return srv.(AccountServiceServer).CreateAccount(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AccountService_GetAccountByCitizenID_FullMethodName,
+		FullMethod: AccountService_CreateAccount_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).GetAccountByCitizenID(ctx, req.(*GetAccountByCitizenIDRequest))
+		return srv.(AccountServiceServer).CreateAccount(ctx, req.(*Account))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_DeleteAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).DeleteAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_DeleteAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).DeleteAccount(ctx, req.(*DeleteAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_UpdateAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Account)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).UpdateAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_UpdateAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).UpdateAccount(ctx, req.(*Account))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -133,12 +199,20 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*AccountServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetAllAccount",
-			Handler:    _AccountService_GetAllAccount_Handler,
+			MethodName: "GetAccounts",
+			Handler:    _AccountService_GetAccounts_Handler,
 		},
 		{
-			MethodName: "GetAccountByCitizenID",
-			Handler:    _AccountService_GetAccountByCitizenID_Handler,
+			MethodName: "CreateAccount",
+			Handler:    _AccountService_CreateAccount_Handler,
+		},
+		{
+			MethodName: "DeleteAccount",
+			Handler:    _AccountService_DeleteAccount_Handler,
+		},
+		{
+			MethodName: "UpdateAccount",
+			Handler:    _AccountService_UpdateAccount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

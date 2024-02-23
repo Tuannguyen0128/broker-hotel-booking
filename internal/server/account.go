@@ -1,44 +1,26 @@
 package server
 
 import (
+	"broker-hotel-booking/internal/models"
 	"broker-hotel-booking/internal/proto"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"log"
 	"net/http"
 )
 
-var (
-	accountUrl = "/api/"
-)
-
-func (sv *server) GetAllAccount(ctx context.Context, req *proto.GetAccountsRequest) (*proto.GetAccountsResponse, error) {
-	requestId, _ := uuid.NewUUID()
-	message := &Message{
-		Header: MessageHeader{
-			ServiceName: "GetAllAccount",
-			ReqID:       requestId.String(),
-		},
-		Body: req,
-	}
+func (sv *server) GetAccounts(ctx context.Context, req *proto.GetAccountsRequest) (*proto.GetAccountsResponse, error) {
 	// Prepare request
-	payload, _ := json.Marshal(message)
-	jsonPayload := make([]byte, 0)
-	if payload != nil {
-		jsonPayload, _ = json.Marshal(payload)
-	}
-
-	//result := &ClientResponse{}
-	url := sv.CFG.RepoServer + accountUrl + fmt.Sprintf("accounts?id=%s&staff_id=%s&username=%s&page=%d&offset=%d", req.ID, req.StaffID, req.Username, req.Page, req.Offset)
-	log.Println("Broker call to repo:", url)
-	request, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonPayload))
+	url := sv.CFG.RepoServer + api + fmt.Sprintf("accounts?id=%s&staff_id=%s&username=%s&page=%d&offset=%d", req.Id, req.StaffId, req.Username, req.Page, req.Offset)
+	request, err := http.NewRequest("GET", url, nil)
 	request.Header.Set("Content-Type", "application/json")
 
 	// Do request
 	client := http.Client{}
+	log.Println("Broker call to repo:", request)
 	resp, err := client.Do(request)
 	if resp != nil && resp.Body != nil {
 		defer resp.Body.Close()
@@ -49,33 +31,39 @@ func (sv *server) GetAllAccount(ctx context.Context, req *proto.GetAccountsReque
 	}
 
 	// Response
-	var accounts *proto.GetAccountsResponse
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&accounts)
+	var response *models.Response
+	respDecoder := json.NewDecoder(resp.Body)
+	err = respDecoder.Decode(&response)
 	if err != nil {
-		fmt.Println("Loi")
+		fmt.Println(err)
+	}
+	if response.Error.Code == "" {
+		return nil, errors.New(response.Error.Error())
+	}
+
+	bodyByte, ok := response.Body.([]byte)
+	if !ok {
+		return nil, errors.New("Unable to decode body")
+	}
+
+	var accounts *proto.GetAccountsResponse
+	bodyDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
+	err = bodyDecoder.Decode(&accounts)
+	if err != nil {
+		return nil, errors.New("Unable to decode body")
 	}
 	return accounts, nil
 }
-func (sv *server) GetAccountByCitizenID(ctx context.Context, req *proto.GetAccountByCitizenIDRequest) (*proto.Account, error) {
-	requestId, _ := uuid.NewUUID()
-	message := &Message{
-		Header: MessageHeader{
-			ServiceName: "GetAccountByCitizenID",
-			ReqID:       requestId.String(),
-		},
-		Body: req,
-	}
+func (sv *server) CreateAccount(ctx context.Context, req *proto.Account) (*proto.CreateAccountResponse, error) {
 	// Prepare request
-	payload, _ := json.Marshal(message)
+	payload, _ := json.Marshal(req)
 	jsonPayload := make([]byte, 0)
 	if payload != nil {
 		jsonPayload, _ = json.Marshal(payload)
 	}
-
-	result := &ClientResponse{}
-	url := ""
-	request, err := http.NewRequest("GET", url, bytes.NewBuffer(jsonPayload))
+	url := sv.CFG.RepoServer + api + fmt.Sprintf("account")
+	log.Println("Broker call to repo:", url)
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	request.Header.Set("Content-Type", "application/json")
 
 	// Do request
@@ -90,12 +78,93 @@ func (sv *server) GetAccountByCitizenID(ctx context.Context, req *proto.GetAccou
 	}
 
 	// Response
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&result.RawData)
-	account := &proto.Account{}
-	byteRawdata := result.RawData.([]byte)
-	json.Unmarshal(byteRawdata, account)
+
+	var response *models.Response
+	respDecoder := json.NewDecoder(resp.Body)
+	err = respDecoder.Decode(&response)
+
+	bodyByte, ok := response.Body.([]byte)
+	if !ok {
+		return nil, errors.New("Unable to decode body")
+	}
+
+	var account *proto.CreateAccountResponse
+	bodyDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
+	err = bodyDecoder.Decode(&account)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	if response.Error.Code == "" {
+		return nil, errors.New(response.Error.Error())
+	}
 	return account, nil
+}
+
+func (sv *server) UpdateAccount(ctx context.Context, req *proto.Account) (*proto.Account, error) {
+	// Prepare request
+	payload, _ := json.Marshal(req)
+	jsonPayload := make([]byte, 0)
+	if payload != nil {
+		jsonPayload, _ = json.Marshal(payload)
+	}
+	url := sv.CFG.RepoServer + api + fmt.Sprintf("account")
+	request, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonPayload))
+	request.Header.Set("Content-Type", "application/json")
+
+	// Do request
+	client := http.Client{}
+	log.Println("Broker call to repo:", request, url)
+	resp, err := client.Do(request)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		log.Println("Failed unable to reach the server.", err, url)
+		return nil, err
+	}
+
+	// Response
+	var account *proto.Account
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&account)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return account, nil
+}
+
+func (sv *server) DeleteAccount(ctx context.Context, req *proto.DeleteAccountRequest) (*proto.DeleteAccountResponse, error) {
+	// Prepare request
+	payload, _ := json.Marshal(req)
+	jsonPayload := make([]byte, 0)
+	if payload != nil {
+		jsonPayload, _ = json.Marshal(payload)
+	}
+	url := sv.CFG.RepoServer + api + fmt.Sprintf("account")
+	request, err := http.NewRequest("DELETE", url, bytes.NewBuffer(jsonPayload))
+	request.Header.Set("Content-Type", "application/json")
+
+	// Do request
+	client := http.Client{}
+	log.Println("Broker call to repo:", request, url)
+	resp, err := client.Do(request)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		log.Println("Failed unable to reach the server.", err, url)
+		return nil, err
+	}
+
+	// Response
+	var result *proto.DeleteAccountResponse
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&result)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return result, nil
 }
 
 type MessageHeader struct {
@@ -107,9 +176,7 @@ type Message struct {
 	Header MessageHeader
 	Body   interface{}
 }
-type Accounts struct {
-	list []Account
-}
+
 type ClientResponse struct {
 	Status  string      `json:"status"`
 	Code    int         `json:"code"`

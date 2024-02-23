@@ -1,0 +1,42 @@
+syntax = "proto3";
+package protobufs;
+option go_package="./proto";
+service GuestService {
+  rpc GetGuests (GetGuestsRequest) returns (GetGuestsResponse);
+  rpc CreateGuest (Guest) returns (Guest);
+  rpc DeleteGuest (DeleteGuestRequest) returns (DeleteGuestResponse);
+  rpc UpdateGuest (Guest) returns (Guest);
+}
+
+message GetGuestsRequest {
+  string id =1;
+  string citizen_id =2;
+  string phone=3;
+  int32 page =4;
+  int32 offset=5;
+}
+
+message GetGuestsResponse {
+  repeated Guest guests=1;
+}
+message DeleteGuestRequest{
+  string id=1;
+}
+
+message DeleteGuestResponse{
+  string result=1;
+}
+
+message Guest {
+  string id = 1 ;
+  string first_name = 2;
+  string last_name = 3;
+  string date_of_birth = 4;
+  string address = 5;
+  string phone = 6;
+  string citizen_id = 7;
+  string email = 8;
+  string created_at = 9;
+  string update_at = 10;
+  string deleted_at = 11;
+}

@@ -1,4 +1,5 @@
 broker_server: "localhost:3000"
 repo_server : "http://localhost:8084"
-kafka_server : "localhost:29029"
-kafka_topic : "broker-repo"
+kafka_server : "localhost:29092"
+kafka_broker-topic : "broker-repo"
+kafka_repo-topic : "repo-broker"

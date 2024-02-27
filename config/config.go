@@ -16,10 +16,11 @@ var (
 
 // AppConfig holds the application's configuration parameters.
 type AppConfig struct {
-	RepoServer   string `mapstructure:"repo_server"`
-	BrokerServer string `mapstructure:"broker_server"`
-	KafkaServer  string `mapstructure:"kafka_server"`
-	KafkaTopic   string `mapstructure:"kafka_topic"`
+	RepoServer       string `mapstructure:"repo_server"`
+	BrokerServer     string `mapstructure:"broker_server"`
+	KafkaServer      string `mapstructure:"kafka_server"`
+	KafkaBrokerTopic string `mapstructure:"kafka_broker-topic"`
+	KafkaRepoTopic   string `mapstructure:"kafka_repo-topic"`
 }
 
 // Load ...

@@ -5,10 +5,6 @@ import (
 	"log"
 )
 
-var (
-	KafkaClient = &Kafka{}
-)
-
 func (k *Kafka) SendMessage(message []byte) {
 	_, err := k.ProducerConn.WriteMessages(
 		kafka.Message{Value: message},

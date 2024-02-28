@@ -3,13 +3,12 @@ package server
 import (
 	"broker-hotel-booking/internal/models"
 	"broker-hotel-booking/internal/proto"
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
 	"log"
-	"net/http"
+	"time"
 )
 
 type KafkaRequest struct {
@@ -19,7 +18,6 @@ type KafkaRequest struct {
 
 func (sv *server) GetAccounts(ctx context.Context, req *proto.GetAccountsRequest) (*proto.GetAccountsResponse, error) {
 	// Prepare request
-	url := sv.CFG.RepoServer + api + fmt.Sprintf("accounts?id=%s&staff_id=%s&username=%s&page=%d&offset=%d", req.Id, req.StaffId, req.Username, req.Page, req.Offset)
 
 	kafkaRequest := KafkaRequest{
 		ServiceName: "GetAccounts",
@@ -30,11 +28,12 @@ func (sv *server) GetAccounts(ctx context.Context, req *proto.GetAccountsRequest
 	if err != nil {
 		return nil, err
 	}
+	log.Println("Request", string(message))
 
 	// Do request
 	sv.kafkaClient.SendMessage(message)
 	if err != nil {
-		log.Println("Failed unable to reach the server.", err, url)
+		log.Println("Failed unable to reach the server.", err)
 		return nil, err
 	}
 
@@ -46,7 +45,7 @@ func (sv *server) GetAccounts(ctx context.Context, req *proto.GetAccountsRequest
 	var response = &models.Response{}
 	err = json.Unmarshal(responseByte, response)
 	if err != nil {
-		fmt.Println(err.Error())
+		return &proto.GetAccountsResponse{Accounts: nil}, nil
 	}
 	if response.Error.Code != "" {
 		return nil, errors.New(response.Error.Error())
@@ -54,13 +53,13 @@ func (sv *server) GetAccounts(ctx context.Context, req *proto.GetAccountsRequest
 	if response.Body == nil {
 		return &proto.GetAccountsResponse{Accounts: nil}, nil
 	}
-	log.Println(response)
-	jsonbody, err := json.Marshal(response.Body)
+	// Decode response body
+	jsonBody, err := json.Marshal(response.Body)
 	if err != nil {
 		fmt.Println(err)
 	}
 	var accounts = &proto.GetAccountsResponse{}
-	if err := json.Unmarshal(jsonbody, &accounts.Accounts); err != nil {
+	if err := json.Unmarshal(jsonBody, &accounts.Accounts); err != nil {
 		// do error check
 		fmt.Println(err)
 	}
@@ -68,88 +67,107 @@ func (sv *server) GetAccounts(ctx context.Context, req *proto.GetAccountsRequest
 }
 func (sv *server) CreateAccount(ctx context.Context, req *proto.Account) (*proto.CreateAccountResponse, error) {
 	// Prepare request
+	log.Println("Request", req)
 	requestAcc := &models.Account{
 		StaffId:    req.StaffId,
 		Username:   req.Username,
 		Password:   req.Password,
 		UserRoleId: req.UserRoleId,
 	}
-	payload, err := json.Marshal(requestAcc)
-	//jsonPayload := make([]byte, 0)
-	if err != nil {
-		return nil, err
+	kafkaRequest := KafkaRequest{
+		ServiceName: "CreateAccount",
+		Payload:     requestAcc,
 	}
-	url := sv.CFG.RepoServer + api + fmt.Sprintf("account")
-	log.Println("Broker call to repo:", url)
-	request, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
-	request.Header.Set("Content-Type", "application/json")
+
+	message, err := json.Marshal(kafkaRequest)
+	if err != nil {
+		return nil, errors.New("Unable to marshal request")
+	}
 
 	// Do request
-	client := http.Client{}
-	resp, err := client.Do(request)
-	if resp != nil && resp.Body != nil {
-		defer resp.Body.Close()
-	}
-	if err != nil {
-		log.Println("Failed unable to reach the server.", err, url)
-		return nil, err
-	}
+	sv.kafkaClient.SendMessage(message)
 
 	// Response
-	var response *models.Response
-	respDecoder := json.NewDecoder(resp.Body)
-	err = respDecoder.Decode(&response)
+	ch := make(chan []byte)
+	go sv.kafkaClient.ReadMessage(ch)
+	responseByte := <-ch
+	fmt.Println(string(responseByte))
+	var response = &models.Response{}
+	err = json.Unmarshal(responseByte, response)
 	if err != nil {
-		fmt.Println(err)
+		return nil, errors.New("Unable to decode response")
 	}
+
 	if response.Error.Code != "" {
-		return &proto.CreateAccountResponse{Id: ""}, errors.New(response.Error.Error())
+		return nil, errors.New(response.Error.Error())
 	}
 	if response.Body == nil {
-		return &proto.CreateAccountResponse{}, nil
+		return &proto.CreateAccountResponse{Id: ""}, nil
 	}
-	log.Println(response)
-	jsonbody, err := json.Marshal(response.Body)
+
+	// Decode response body
+	jsonBody, err := json.Marshal(response.Body)
 	if err != nil {
+		fmt.Println(err)
+	}
+	var account = &proto.CreateAccountResponse{}
+	if err := json.Unmarshal(jsonBody, &account); err != nil {
 		// do error check
 		fmt.Println(err)
 	}
-	var result *proto.CreateAccountResponse
-	if err := json.Unmarshal(jsonbody, &result); err != nil {
-		// do error check
-		fmt.Println(err)
-	}
-	return result, nil
+	return account, nil
 }
 
 func (sv *server) UpdateAccount(ctx context.Context, req *proto.Account) (*proto.Account, error) {
 	// Prepare request
-	payload, _ := json.Marshal(req)
-	jsonPayload := make([]byte, 0)
-	if payload != nil {
-		jsonPayload, _ = json.Marshal(payload)
+	log.Println("Request", req)
+	requestAcc := &models.Account{
+		Id:         req.Id,
+		StaffId:    req.StaffId,
+		Username:   req.Username,
+		Password:   req.Password,
+		UserRoleId: req.UserRoleId,
+		UpdatedAt:  time.Now().String(),
 	}
-	url := sv.CFG.RepoServer + api + fmt.Sprintf("account")
-	request, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonPayload))
-	request.Header.Set("Content-Type", "application/json")
+	kafkaRequest := KafkaRequest{
+		ServiceName: "UpdateAccount",
+		Payload:     requestAcc,
+	}
+
+	message, err := json.Marshal(kafkaRequest)
+	if err != nil {
+		return nil, errors.New("Unable to marshal request")
+	}
 
 	// Do request
-	client := http.Client{}
-	log.Println("Broker call to repo:", request, url)
-	resp, err := client.Do(request)
-	if resp != nil && resp.Body != nil {
-		defer resp.Body.Close()
-	}
-	if err != nil {
-		log.Println("Failed unable to reach the server.", err, url)
-		return nil, err
-	}
+	sv.kafkaClient.SendMessage(message)
 
 	// Response
-	var account *proto.Account
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&account)
+	ch := make(chan []byte)
+	go sv.kafkaClient.ReadMessage(ch)
+	responseByte := <-ch
+	fmt.Println(string(responseByte))
+	var response = &models.Response{}
+	err = json.Unmarshal(responseByte, response)
 	if err != nil {
+		return nil, errors.New("Unable to decode response")
+	}
+
+	if response.Error.Code != "" {
+		return nil, errors.New(response.Error.Error())
+	}
+	if response.Body == nil {
+		return &proto.Account{}, nil
+	}
+
+	// Decode response body
+	jsonBody, err := json.Marshal(response.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+	var account = &proto.Account{}
+	if err := json.Unmarshal(jsonBody, &account); err != nil {
+		// do error check
 		fmt.Println(err)
 	}
 	return account, nil
@@ -157,35 +175,52 @@ func (sv *server) UpdateAccount(ctx context.Context, req *proto.Account) (*proto
 
 func (sv *server) DeleteAccount(ctx context.Context, req *proto.DeleteAccountRequest) (*proto.DeleteAccountResponse, error) {
 	// Prepare request
-	payload, _ := json.Marshal(req)
-	jsonPayload := make([]byte, 0)
-	if payload != nil {
-		jsonPayload, _ = json.Marshal(payload)
+	log.Println("Request", req)
+	requestAcc := &proto.DeleteAccountRequest{
+		Id: req.Id,
 	}
-	url := sv.CFG.RepoServer + api + fmt.Sprintf("account")
-	request, err := http.NewRequest("DELETE", url, bytes.NewBuffer(jsonPayload))
-	request.Header.Set("Content-Type", "application/json")
+	kafkaRequest := KafkaRequest{
+		ServiceName: "DeleteAccount",
+		Payload:     requestAcc,
+	}
+
+	message, err := json.Marshal(kafkaRequest)
+	if err != nil {
+		return nil, errors.New("Unable to marshal request")
+	}
 
 	// Do request
-	client := http.Client{}
-	log.Println("Broker call to repo:", request, url)
-	resp, err := client.Do(request)
-	if resp != nil && resp.Body != nil {
-		defer resp.Body.Close()
-	}
-	if err != nil {
-		log.Println("Failed unable to reach the server.", err, url)
-		return nil, err
-	}
+	sv.kafkaClient.SendMessage(message)
 
 	// Response
-	var result *proto.DeleteAccountResponse
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&result)
+	ch := make(chan []byte)
+	go sv.kafkaClient.ReadMessage(ch)
+	responseByte := <-ch
+	fmt.Println(string(responseByte))
+	var response = &models.Response{}
+	err = json.Unmarshal(responseByte, response)
+
+	if err != nil {
+		return nil, errors.New("Unable to decode response")
+	}
+	if response.Error.Code != "" {
+		return nil, errors.New(response.Error.Error())
+	}
+	if response.Body == nil {
+		return &proto.DeleteAccountResponse{}, nil
+	}
+
+	// Decode response body
+	jsonBody, err := json.Marshal(response.Body)
 	if err != nil {
 		fmt.Println(err)
 	}
-	return result, nil
+	var account = &proto.DeleteAccountResponse{}
+	if err := json.Unmarshal(jsonBody, &account); err != nil {
+		// do error check
+		fmt.Println(err)
+	}
+	return account, nil
 }
 
 type MessageHeader struct {

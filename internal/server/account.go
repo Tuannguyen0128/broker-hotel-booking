@@ -32,19 +32,6 @@ func (sv *server) GetAccounts(ctx context.Context, req *proto.GetAccountsRequest
 	}
 	log.Println("Request", string(message))
 
-	// Save request log to mongodb
-	data := models.LogData{
-		ID:          primitive.ObjectID{},
-		Content:     string(message),
-		CreatedDate: time.Now(),
-	}
-
-	repo := repositories.New()
-	repo.LogRepo.InsertRequest(&data)
-	if err != nil {
-		log.Println("Failed to store log to database.", err)
-	}
-
 	// Do request
 	sv.kafkaClient.SendMessage(message)
 	if err != nil {
@@ -74,14 +61,15 @@ func (sv *server) GetAccounts(ctx context.Context, req *proto.GetAccountsRequest
 		fmt.Println(err)
 	}
 
-	// Save response log to mongodb
-	data = models.LogData{
-		ID:          primitive.ObjectID{},
-		Content:     string(jsonBody),
-		CreatedDate: time.Now(),
+	// Store json detail to mongodb
+	data := models.LogData{
+		ID:             primitive.ObjectID{},
+		RequestDetail:  string(message),
+		ResponseDetail: string(jsonBody),
+		CreatedDate:    time.Now(),
 	}
 
-	repo = repositories.New()
+	repo := repositories.New()
 	repo.LogRepo.InsertRequest(&data)
 	if err != nil {
 		log.Println("Failed to store log to database.", err)
@@ -114,19 +102,6 @@ func (sv *server) CreateAccount(ctx context.Context, req *proto.Account) (*proto
 		return nil, errors.New("Unable to marshal log")
 	}
 
-	// Save request log to mongodb
-	data := models.LogData{
-		ID:          primitive.ObjectID{},
-		Content:     string(message),
-		CreatedDate: time.Now(),
-	}
-
-	repo := repositories.New()
-	repo.LogRepo.InsertRequest(&data)
-	if err != nil {
-		log.Println("Failed to store log to database.", err)
-	}
-
 	// Do request
 	sv.kafkaClient.SendMessage(message)
 
@@ -153,14 +128,15 @@ func (sv *server) CreateAccount(ctx context.Context, req *proto.Account) (*proto
 		fmt.Println(err)
 	}
 
-	// Save response log to mongodb
-	data = models.LogData{
-		ID:          primitive.ObjectID{},
-		Content:     string(jsonBody),
-		CreatedDate: time.Now(),
+	// Store json detail to mongodb
+	data := models.LogData{
+		ID:             primitive.ObjectID{},
+		RequestDetail:  string(message),
+		ResponseDetail: string(jsonBody),
+		CreatedDate:    time.Now(),
 	}
 
-	repo = repositories.New()
+	repo := repositories.New()
 	repo.LogRepo.InsertRequest(&data)
 	if err != nil {
 		log.Println("Failed to store log to database.", err)
@@ -196,19 +172,6 @@ func (sv *server) UpdateAccount(ctx context.Context, req *proto.Account) (*proto
 		return nil, errors.New("Unable to marshal log")
 	}
 
-	// Save request log to mongodb
-	data := models.LogData{
-		ID:          primitive.ObjectID{},
-		Content:     string(message),
-		CreatedDate: time.Now(),
-	}
-
-	repo := repositories.New()
-	repo.LogRepo.InsertRequest(&data)
-	if err != nil {
-		log.Println("Failed to store log to database.", err)
-	}
-
 	// Do log
 	sv.kafkaClient.SendMessage(message)
 
@@ -235,14 +198,15 @@ func (sv *server) UpdateAccount(ctx context.Context, req *proto.Account) (*proto
 		fmt.Println(err)
 	}
 
-	// Save response log to mongodb
-	data = models.LogData{
-		ID:          primitive.ObjectID{},
-		Content:     string(jsonBody),
-		CreatedDate: time.Now(),
+	// Store json detail to mongodb
+	data := models.LogData{
+		ID:             primitive.ObjectID{},
+		RequestDetail:  string(message),
+		ResponseDetail: string(jsonBody),
+		CreatedDate:    time.Now(),
 	}
 
-	repo = repositories.New()
+	repo := repositories.New()
 	repo.LogRepo.InsertRequest(&data)
 	if err != nil {
 		log.Println("Failed to store log to database.", err)
@@ -273,19 +237,6 @@ func (sv *server) DeleteAccount(ctx context.Context, req *proto.DeleteAccountReq
 		return nil, errors.New("Unable to marshal request")
 	}
 
-	// Save request log to mongodb
-	data := models.LogData{
-		ID:          primitive.ObjectID{},
-		Content:     string(message),
-		CreatedDate: time.Now(),
-	}
-
-	repo := repositories.New()
-	repo.LogRepo.InsertRequest(&data)
-	if err != nil {
-		log.Println("Failed to store log to database.", err)
-	}
-
 	// Do request
 	sv.kafkaClient.SendMessage(message)
 
@@ -312,14 +263,15 @@ func (sv *server) DeleteAccount(ctx context.Context, req *proto.DeleteAccountReq
 		fmt.Println(err)
 	}
 
-	// Save response log to mongodb
-	data = models.LogData{
-		ID:          primitive.ObjectID{},
-		Content:     string(jsonBody),
-		CreatedDate: time.Now(),
+	// Store json detail to mongodb
+	data := models.LogData{
+		ID:             primitive.ObjectID{},
+		RequestDetail:  string(message),
+		ResponseDetail: string(jsonBody),
+		CreatedDate:    time.Now(),
 	}
 
-	repo = repositories.New()
+	repo := repositories.New()
 	repo.LogRepo.InsertRequest(&data)
 	if err != nil {
 		log.Println("Failed to store log to database.", err)

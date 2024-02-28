@@ -37,6 +37,5 @@ func ListenAndServe(Port string, kafka *kafka.Kafka, config *configs.AppConfig) 
 	err = s.Serve(lis)
 	if err != nil {
 		log.Fatalln("error while serve", err)
-
 	}
 }

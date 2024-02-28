@@ -1,9 +1,10 @@
 package server
 
 import (
-	"broker-hotel-booking/config"
+	"broker-hotel-booking/configs"
 	"broker-hotel-booking/internal/kafka"
 	"broker-hotel-booking/internal/proto"
+	"broker-hotel-booking/internal/repositories"
 	"fmt"
 	"google.golang.org/grpc"
 	"log"
@@ -13,16 +14,17 @@ import (
 type server struct {
 	proto.AccountServiceServer
 	kafkaClient *kafka.Kafka
-	CFG         *config.AppConfig
+	CFG         *configs.AppConfig
+	repo        *repositories.Repositories
 }
 
-func NewSever(kafka *kafka.Kafka, appConfig *config.AppConfig) *server {
+func NewSever(kafka *kafka.Kafka, appConfig *configs.AppConfig) *server {
 	return &server{
 		kafkaClient: kafka,
 		CFG:         appConfig,
 	}
 }
-func ListenAndServe(Port string, kafka *kafka.Kafka, config *config.AppConfig) {
+func ListenAndServe(Port string, kafka *kafka.Kafka, config *configs.AppConfig) {
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", Port))
 	if err != nil {
 		log.Fatalln(err)

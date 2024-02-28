@@ -3,3 +3,7 @@ repo_server : "http://localhost:8084"
 kafka_server : "localhost:29092"
 kafka_broker-topic : "broker-repo"
 kafka_repo-topic : "repo-broker"
+
+mongo-db:
+  host: "mongodb://localhost:27017"
+  schema: "hotel_log_db"

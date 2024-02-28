@@ -3,10 +3,12 @@ package server
 import (
 	"broker-hotel-booking/internal/models"
 	"broker-hotel-booking/internal/proto"
+	"broker-hotel-booking/internal/repositories"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"time"
 )
@@ -29,6 +31,19 @@ func (sv *server) GetAccounts(ctx context.Context, req *proto.GetAccountsRequest
 		return nil, err
 	}
 	log.Println("Request", string(message))
+
+	// Save request log to mongodb
+	data := models.LogData{
+		ID:          primitive.ObjectID{},
+		Content:     string(message),
+		CreatedDate: time.Now(),
+	}
+
+	repo := repositories.New()
+	repo.LogRepo.InsertRequest(&data)
+	if err != nil {
+		log.Println("Failed to store log to database.", err)
+	}
 
 	// Do request
 	sv.kafkaClient.SendMessage(message)
@@ -53,11 +68,26 @@ func (sv *server) GetAccounts(ctx context.Context, req *proto.GetAccountsRequest
 	if response.Body == nil {
 		return &proto.GetAccountsResponse{Accounts: nil}, nil
 	}
-	// Decode response body
+
 	jsonBody, err := json.Marshal(response.Body)
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	// Save response log to mongodb
+	data = models.LogData{
+		ID:          primitive.ObjectID{},
+		Content:     string(jsonBody),
+		CreatedDate: time.Now(),
+	}
+
+	repo = repositories.New()
+	repo.LogRepo.InsertRequest(&data)
+	if err != nil {
+		log.Println("Failed to store log to database.", err)
+	}
+
+	// Decode response body
 	var accounts = &proto.GetAccountsResponse{}
 	if err := json.Unmarshal(jsonBody, &accounts.Accounts); err != nil {
 		// do error check
@@ -81,7 +111,20 @@ func (sv *server) CreateAccount(ctx context.Context, req *proto.Account) (*proto
 
 	message, err := json.Marshal(kafkaRequest)
 	if err != nil {
-		return nil, errors.New("Unable to marshal request")
+		return nil, errors.New("Unable to marshal log")
+	}
+
+	// Save request log to mongodb
+	data := models.LogData{
+		ID:          primitive.ObjectID{},
+		Content:     string(message),
+		CreatedDate: time.Now(),
+	}
+
+	repo := repositories.New()
+	repo.LogRepo.InsertRequest(&data)
+	if err != nil {
+		log.Println("Failed to store log to database.", err)
 	}
 
 	// Do request
@@ -105,11 +148,25 @@ func (sv *server) CreateAccount(ctx context.Context, req *proto.Account) (*proto
 		return &proto.CreateAccountResponse{Id: ""}, nil
 	}
 
-	// Decode response body
 	jsonBody, err := json.Marshal(response.Body)
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	// Save response log to mongodb
+	data = models.LogData{
+		ID:          primitive.ObjectID{},
+		Content:     string(jsonBody),
+		CreatedDate: time.Now(),
+	}
+
+	repo = repositories.New()
+	repo.LogRepo.InsertRequest(&data)
+	if err != nil {
+		log.Println("Failed to store log to database.", err)
+	}
+
+	// Decode response body
 	var account = &proto.CreateAccountResponse{}
 	if err := json.Unmarshal(jsonBody, &account); err != nil {
 		// do error check
@@ -136,10 +193,23 @@ func (sv *server) UpdateAccount(ctx context.Context, req *proto.Account) (*proto
 
 	message, err := json.Marshal(kafkaRequest)
 	if err != nil {
-		return nil, errors.New("Unable to marshal request")
+		return nil, errors.New("Unable to marshal log")
 	}
 
-	// Do request
+	// Save request log to mongodb
+	data := models.LogData{
+		ID:          primitive.ObjectID{},
+		Content:     string(message),
+		CreatedDate: time.Now(),
+	}
+
+	repo := repositories.New()
+	repo.LogRepo.InsertRequest(&data)
+	if err != nil {
+		log.Println("Failed to store log to database.", err)
+	}
+
+	// Do log
 	sv.kafkaClient.SendMessage(message)
 
 	// Response
@@ -160,11 +230,25 @@ func (sv *server) UpdateAccount(ctx context.Context, req *proto.Account) (*proto
 		return &proto.Account{}, nil
 	}
 
-	// Decode response body
 	jsonBody, err := json.Marshal(response.Body)
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	// Save response log to mongodb
+	data = models.LogData{
+		ID:          primitive.ObjectID{},
+		Content:     string(jsonBody),
+		CreatedDate: time.Now(),
+	}
+
+	repo = repositories.New()
+	repo.LogRepo.InsertRequest(&data)
+	if err != nil {
+		log.Println("Failed to store log to database.", err)
+	}
+
+	// Decode response body
 	var account = &proto.Account{}
 	if err := json.Unmarshal(jsonBody, &account); err != nil {
 		// do error check
@@ -189,6 +273,19 @@ func (sv *server) DeleteAccount(ctx context.Context, req *proto.DeleteAccountReq
 		return nil, errors.New("Unable to marshal request")
 	}
 
+	// Save request log to mongodb
+	data := models.LogData{
+		ID:          primitive.ObjectID{},
+		Content:     string(message),
+		CreatedDate: time.Now(),
+	}
+
+	repo := repositories.New()
+	repo.LogRepo.InsertRequest(&data)
+	if err != nil {
+		log.Println("Failed to store log to database.", err)
+	}
+
 	// Do request
 	sv.kafkaClient.SendMessage(message)
 
@@ -210,11 +307,25 @@ func (sv *server) DeleteAccount(ctx context.Context, req *proto.DeleteAccountReq
 		return &proto.DeleteAccountResponse{}, nil
 	}
 
-	// Decode response body
 	jsonBody, err := json.Marshal(response.Body)
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	// Save response log to mongodb
+	data = models.LogData{
+		ID:          primitive.ObjectID{},
+		Content:     string(jsonBody),
+		CreatedDate: time.Now(),
+	}
+
+	repo = repositories.New()
+	repo.LogRepo.InsertRequest(&data)
+	if err != nil {
+		log.Println("Failed to store log to database.", err)
+	}
+
+	// Decode response body
 	var account = &proto.DeleteAccountResponse{}
 	if err := json.Unmarshal(jsonBody, &account); err != nil {
 		// do error check

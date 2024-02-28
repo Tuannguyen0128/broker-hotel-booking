@@ -17,7 +17,7 @@ func (sv *server) GetGuests(ctx context.Context, req *proto.GetGuestsRequest) (*
 	request, err := http.NewRequest("GET", url, nil)
 	request.Header.Set("Content-Type", "application/json")
 
-	// Do request
+	// Do log
 	client := http.Client{}
 	resp, err := client.Do(request)
 	if resp != nil && resp.Body != nil {
@@ -44,7 +44,7 @@ func (sv *server) CreateGuest(ctx context.Context, req *proto.Guest) (*proto.Gue
 	request, err := http.NewRequest("POST", url, nil)
 	request.Header.Set("Content-Type", "application/json")
 
-	// Do request
+	// Do log
 	client := http.Client{}
 	log.Println("Broker call to repo:", request, url)
 	resp, err := client.Do(request)
@@ -72,7 +72,7 @@ func (sv *server) DeleteGuest(ctx context.Context, req *proto.DeleteGuestRequest
 	request, err := http.NewRequest("DELETE", url, nil)
 	request.Header.Set("Content-Type", "application/json")
 
-	// Do request
+	// Do log
 	client := http.Client{}
 	log.Println("Broker call to repo:", request)
 	resp, err := client.Do(request)
@@ -95,7 +95,7 @@ func (sv *server) DeleteGuest(ctx context.Context, req *proto.DeleteGuestRequest
 }
 
 func (sv *server) UpdateGuest(ctx context.Context, req *proto.Guest) (*proto.Guest, error) {
-	// Prepare request
+	// Prepare log
 	payload, _ := json.Marshal(req)
 	jsonPayload := make([]byte, 0)
 	if payload != nil {
@@ -105,7 +105,7 @@ func (sv *server) UpdateGuest(ctx context.Context, req *proto.Guest) (*proto.Gue
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	request.Header.Set("Content-Type", "application/json")
 
-	// Do request
+	// Do log
 	client := http.Client{}
 	log.Println("Broker call to repo:", request)
 	resp, err := client.Do(request)

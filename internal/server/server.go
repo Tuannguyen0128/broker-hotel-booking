@@ -13,6 +13,7 @@ import (
 
 type server struct {
 	proto.AccountServiceServer
+	proto.StaffServiceServer
 	kafkaClient *kafka.Kafka
 	CFG         *configs.AppConfig
 	repo        *repositories.Repositories
@@ -33,6 +34,7 @@ func ListenAndServe(Port string, kafka *kafka.Kafka, config *configs.AppConfig) 
 	// Init grpc
 	s := grpc.NewServer()
 	proto.RegisterAccountServiceServer(s, NewSever(kafka, config))
+	proto.RegisterStaffServiceServer(s, NewSever(kafka, config))
 	fmt.Println("Server connecting...")
 	err = s.Serve(lis)
 	if err != nil {
